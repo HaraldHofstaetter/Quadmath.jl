@@ -33,14 +33,14 @@ end
 @static if is_unix()
     # we use this slightly cumbersome definition to ensure that the value is passed
     # on the xmm registers, matching the x86_64 ABI for __float128.
-    typealias Cfloat128 NTuple{2,VecElement{Float64}}
+    const Cfloat128 = NTuple{2,VecElement{Float64}}
 
     immutable Float128 <: AbstractFloat
         data::Cfloat128
     end
     Float128(x::Number) = convert(Float128, x)
 
-    typealias Complex256 Complex{Float128}
+    const Complex256 = Complex{Float128}
 
     Base.cconvert(::Type{Cfloat128}, x::Float128) = x.data
 
@@ -64,8 +64,8 @@ end
         reinterpret(Float128, reinterpret(UInt128, x))
     
 elseif is_windows()
-    bitstype 128 Float128
-    typealias Cfloat128 Float128
+    primitive type Float128 128 end
+    const Cfloat128 = Float128
 end
 
 sign_mask(::Type{Float128}) =        0x8000_0000_0000_0000_0000_0000_0000_0000
@@ -198,7 +198,7 @@ end
 
 function string(x::Float128)
     lng = 64 
-    buf = Array(UInt8, lng + 1)
+    buf = Array{UInt8}(lng + 1)
     lng = ccall((:quadmath_snprintf,libquadmath), Cint, (Ptr{UInt8}, Csize_t, Ptr{UInt8}, Cfloat128...), buf, lng + 1, "%.35Qe", x)
     return unsafe_string(pointer(buf), lng)
 end
