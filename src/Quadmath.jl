@@ -24,6 +24,7 @@ if is_apple()
 elseif is_unix()
     const quadoplib = "libgcc_s"
     const libquadmath = "libquadmath.so.0"
+    const libmpfr = "libmpfr.so.4" 
 elseif is_windows()
     const quadoplib = "libgcc_s_seh-1.dll"
     const libquadmath = "libquadmath-0.dll"
@@ -98,6 +99,18 @@ convert(::Type{Float128}, x::Int64) =
     Float128(ccall((:__floatditf, quadoplib), Cfloat128, (Int64,), x))
 
 
+#const ROUNDING_MODE = Cint[0] # TODO: CHECK!!!!
+#
+#function convert(::Type{BigFloat}, x::Float128)
+#    z = BigFloat()
+#    res = ccall((:mpfr_set_float128, libmpfr), Int32, (Ptr{BigFloat}, Float128, Int32), &z, x, ROUNDING_MODE[end])
+#    return z
+#end
+#
+#convert(::Type{Float128}, x::BigFloat) =
+#    ccall((:mpfr_get_float128, libmpfr), Float128, (Ptr{BigFloat},Int32), &x, ROUNDING_MODE[end])
+
+
 # comparison
 
 (==)(x::Float128, y::Float128) =
@@ -168,6 +181,11 @@ besselj(n::Cint, x::Float128) =
 bessely(n::Cint, x::Float128) =
        Float128(ccall((:ynq, libquadmath), Cfloat128, (Cint, Cfloat128), n, x))
 
+eps(::Type{Float128}) = reinterpret(Float128, 0x3f8f0000000000000000000000000000)
+realmin(::Type{Float128}) = reinterpret(Float128, 0x00010000000000000000000000000000)
+realmax(::Type{Float128}) = reinterpret(Float128, 0x7ffeffffffffffffffffffffffffffff)
+convert(::Type{Float128}, ::Irrational{:π}) =  reinterpret(Float128, 0x4000921fb54442d18469898cc51701b8)
+convert(::Type{Float128}, ::Irrational{:e}) =  reinterpret(Float128, 0x40005bf0a8b1457695355fb8ac404e7a)
 
 
 
@@ -182,11 +200,12 @@ function frexp(x::Float128)
     return x, Int(r[])
 end
     
-    
 
-
+promote_rule(::Type{Float128}, ::Type{Float16}) = Float128
 promote_rule(::Type{Float128}, ::Type{Float32}) = Float128
 promote_rule(::Type{Float128}, ::Type{Float64}) = Float128
+promote_rule(::Type{Float128}, ::Type{<:Integer}) = Float128
+
 
 #widen(::Type{Float64}) = Float128
 widen(::Type{Float128}) = BigFloat
