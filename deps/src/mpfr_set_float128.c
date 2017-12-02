@@ -184,11 +184,3 @@ mpfr_set_float128 (mpfr_ptr r, __float128 d, mpfr_rnd_t rnd_mode)
 
 #endif /* MPFR_WANT_FLOAT128 */
 
-#include <stdint.h>
-#include "quadmath_wrapper.h"
-int
-mpfr_set_float128_xxx (mpfr_ptr r, myfloat128 d, mpfr_rnd_t rnd_mode)
-{
-    return mpfr_set_float128 (r, F(d), rnd_mode);
-}
-

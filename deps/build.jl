@@ -1,11 +1,8 @@
 cd(joinpath(dirname(@__FILE__), "src"))
 run(`make`)
-if (!ispath("../usr"))
-    run(`mkdir ../usr`)
-end
-if (!ispath("../usr/lib"))
-    run(`mkdir ../usr/lib`)
+if (!ispath("../lib"))
+    run(`mkdir ../lib`)
 end
 
-run(`mv libquadmath_wrapper.$(Libdl.dlext) ../usr/lib`)
+run(`mv mpfr_float128.$(Libdl.dlext) ../lib`)
 

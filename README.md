@@ -1,59 +1,24 @@
 # Quadmath.jl
-Float128 and libquadmath for the Julia language
 
-##Installation
+[![Travis Build Status](https://travis-ci.org/simonbyrne/Quadmath.jl.svg?branch=master)](https://travis-ci.org/simonbyrne/Quadmath.jl)
+[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/wx46vbwmu2ey5qkj?svg=true)](https://ci.appveyor.com/project/simonbyrne/quadmath-jl)
+
+This is a Julia interface to libquadmath, providing a `Float128` type corresponding to the IEEE754 binary128 floating point format.
+
+## Support
+
+Quadmath currently works on x86_64 Linux and macOS.
+
+- It may require a new-ish version of gcc which supports `__float128` type.
+- It has not been tested on 32 bit Linux.
+- I have not had any luck getting it to work on Windows. It's probably something to do with the calling convention: if someone figures it out I would be very grateful.
+- It does not work on ARM due to the lack of libquadmath support for that platform.
+
+## Installation
 ```julia
-Pkg.clone("https://github.com/HaraldHofstaetter/Quadmath.jl")
-Pkg.build("Quadmath")
+Pkg.clone("https://github.com/simonbyrne/Quadmath.jl")
 ```
-##Examples
-To get easy access to the examples, copy them into the home directory:
-```julia
-cp(joinpath(homedir(), ".julia/v0.4/Quadmath/examples/"), joinpath(homedir(), "Quadmath_examples"))
-```
-Then 'Quadmath_examples' will be listed in the JuliaBox home screen. The examples contain among others
-+ [BesselZeros.ipynb](https://github.com/HaraldHofstaetter/Quadmath.jl/blob/master/examples/BesselZeros.ipynb):
-  In this notebook it is demonstrated that `Float128` is about 4 times faster than `BigFloat` with 113 bit precision 
-  (the precision of `Float128`).
 
-##Bugs
-+  `ccall` does not treat parameters and returning values of Julia type `Float128` properly as C type `__float128`.
+## Acknowledgements
 
-    Unfortunately, this is a bug which cannot easily be fixed without modifying the internals of Julia. 
-    The [x86-64 Application Binary Interface](http://www.x86-64.org/documentation.html) 
-    says that parameters and returning values of type `__float128` should be passed preferably in the (128 bit long) SSE       floating point registers `xmm0`,...,`xmm7`. However, for the datatype `Float128` defined as
-    ```julia
-    bitstype 128 Float128 <: AbstractFloat
-    ```
-    in [Quadmath.jl](https://github.com/HaraldHofstaetter/Quadmath.jl/blob/master/src/Quadmath.jl), 
-    `ccall` seems to use the same calling convention as for something like 
-    ```c
-    struct{ 
-        uint64_t u0; 
-        uint64_t u1;
-    } words64;
-    ``` 
-    in C.
-    
-    As a remedy, you can implement a wrapper function for each external function with `__float128` parameters 
-    or return values, that you want to call with `ccall`. Such a wrapper takes parameters `x` of type 
-    `myfloat128` declared as
-    ```c
-    typedef union
-    {
-      __float128 value;
-
-      struct{
-        uint64_t u0;
-        uint64_t u1;
-      } words64;
-    } myfloat128;
-    ```
-    and calls the original function with `x.value` as actual parameter for the corresponding formal parameter of type
-    `__float128`. 
-    This is exactly the technique we use in 
-    [quadmath_wrapper.c](https://github.com/HaraldHofstaetter/Quadmath.jl/blob/master/deps/src/quadmath_wrapper.c)
-    to call the functions of the [libquadmath](https://gcc.gnu.org/onlinedocs/libquadmath/) library.
-    
-
-
+Thank you to Harald Hofstätter, who provided the first iteration of [Quadmath.jl](https://github.com/HaraldHofstaetter/Quadmath.jl).

@@ -105,17 +105,3 @@ mpfr_get_float128 (mpfr_srcptr x, mpfr_rnd_t rnd_mode)
 }
 
 #endif /* MPFR_WANT_FLOAT128 */
-
-
-#include <stdint.h>
-#include "quadmath_wrapper.h"
-
-myfloat128
-mpfr_get_float128_xxx (mpfr_srcptr x, mpfr_rnd_t rnd_mode)
-{
-   __float128 res;
-   res = mpfr_get_float128 (x, rnd_mode);
-   return W(res);
-}   
-
-
