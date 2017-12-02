@@ -24,7 +24,8 @@ if is_apple()
 elseif is_unix()
     const quadoplib = "libgcc_s"
     const libquadmath = "libquadmath.so.0"
-    const libmpfr = "libmpfr.so.4" 
+    const mpfr_float128 = joinpath(dirname(@__FILE__),
+                "..", "deps", "lib", "mpfr_float128.so")
 elseif is_windows()
     const quadoplib = "libgcc_s_seh-1.dll"
     const libquadmath = "libquadmath-0.dll"
@@ -99,16 +100,16 @@ convert(::Type{Float128}, x::Int64) =
     Float128(ccall((:__floatditf, quadoplib), Cfloat128, (Int64,), x))
 
 
-#const ROUNDING_MODE = Cint[0] # TODO: CHECK!!!!
-#
-#function convert(::Type{BigFloat}, x::Float128)
-#    z = BigFloat()
-#    res = ccall((:mpfr_set_float128, libmpfr), Int32, (Ptr{BigFloat}, Float128, Int32), &z, x, ROUNDING_MODE[end])
-#    return z
-#end
-#
-#convert(::Type{Float128}, x::BigFloat) =
-#    ccall((:mpfr_get_float128, libmpfr), Float128, (Ptr{BigFloat},Int32), &x, ROUNDING_MODE[end])
+const ROUNDING_MODE = Cint[0] # TODO: CHECK!!!!
+
+function convert(::Type{BigFloat}, x::Float128)
+    z = BigFloat()
+    res = ccall((:mpfr_set_float128, mpfr_float128), Int32, (Ptr{BigFloat}, Cfloat128, Int32), &z, x, ROUNDING_MODE[end])
+    return z
+end
+
+convert(::Type{Float128}, x::BigFloat) =
+    Float128(ccall((:mpfr_get_float128, mpfr_float128), Cfloat128, (Ptr{BigFloat},Int32), &x, ROUNDING_MODE[end]))
 
 
 # comparison
