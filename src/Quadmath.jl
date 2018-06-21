@@ -135,6 +135,8 @@ convert(::Type{Float128}, x::BigFloat) =
     Float128(ccall((:__divtf3,quadoplib), Cfloat128, (Cfloat128,Cfloat128), x, y))
 (-)(x::Float128) =
     Float128(ccall((:__negtf2,quadoplib), Cfloat128, (Cfloat128,), x))
+(^)(x::Float128, y::Float128) =
+    Float128(ccall((:powq,libquadmath), Cfloat128, (Cfloat128,Cfloat128), x, y))    
 
 # math
 
