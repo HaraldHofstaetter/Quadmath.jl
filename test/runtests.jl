@@ -10,3 +10,7 @@ for T in (Float64, Int32, Int64)
 end
 
 @test Base.exponent_one(Float128) == reinterpret(UInt128, Float128(1.0))
+
+
+x = parse(Float128,"1.2")
+@test parse(Float128, string(x)) == x
