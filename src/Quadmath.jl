@@ -43,7 +43,6 @@ end
     struct Float128 <: AbstractFloat
         data::Cfloat128
     end
-    #Float128(x::Number) = convert(Float128, x)
 
     const Complex256 = Complex{Float128}
 
@@ -103,6 +102,8 @@ Base.Int64(x::Float128) =
 Float128(x::Int64) =
     Float128(ccall((:__floatditf, quadoplib), Cfloat128, (Int64,), x))
 
+Float128(x::Rational{T}) where T = Float128(numerator(x))/Float128(denominator(x))    
+
 # conversion
 
 convert(::Type{Float128}, x::Float64) = Float128(x)
@@ -112,6 +113,7 @@ convert(::Type{Float128}, x::Int32) = Float128(x)
 convert(::Type{Float128}, x::UInt32) = Float128(x)
 convert(::Type{Int64}, x::Float128) = Int32(x)
 convert(::Type{Float128}, x::Int64) = Float128(x)
+convert(::Type{Float128}, x::Type{Rational{T}}) where T = Float128(x)
 
 
 const ROUNDING_MODE = Cint[0] # TODO: CHECK!!!!
