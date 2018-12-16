@@ -9,38 +9,41 @@ import Base: (*), +, -, /,  <, <=, ==, ^, convert,
           promote_rule, widen,
           string, print, show, showcompact, parse,
           acos, acosh, asin, asinh, atan, atanh, cosh, cos,
-          erf, erfc, exp, expm1, log, log2, log10, log1p, sin, sinh, sqrt,
+          exp, expm1, log, log2, log10, log1p, sin, sinh, sqrt,
           tan, tanh,
-          besselj, besselj0, besselj1, bessely, bessely0, bessely1,
           ceil, floor, trunc, round, fma, 
           atan2, copysign, max, min, hypot,
-          gamma, lgamma,
           abs, imag, real, conj, angle, cis,
           eps, realmin, realmax, isinf, isnan, isfinite
 
-if is_apple()
+import SpecialFunctions: erf, erfc, 
+          besselj, besselj0, besselj1, bessely, bessely0, bessely1,
+          gamma, lgamma
+
+
+if Sys.isapple()
     const quadoplib = "libquadmath.0"
     const libquadmath = "libquadmath.0"
-elseif is_unix()
-    const quadoplib = "libgcc_s"
+elseif Sys.isunix()
+    const quadoplib = "libgcc_s.so.1"
     const libquadmath = "libquadmath.so.0"
     const mpfr_float128 = joinpath(dirname(@__FILE__),
                 "..", "deps", "lib", "mpfr_float128.so")
-elseif is_windows()
+elseif Sys.iswindows()
     const quadoplib = "libgcc_s_seh-1.dll"
     const libquadmath = "libquadmath-0.dll"
 end
 
 
-@static if is_unix()
+@static if Sys.isunix()
     # we use this slightly cumbersome definition to ensure that the value is passed
     # on the xmm registers, matching the x86_64 ABI for __float128.
     const Cfloat128 = NTuple{2,VecElement{Float64}}
 
-    immutable Float128 <: AbstractFloat
+    struct Float128 <: AbstractFloat
         data::Cfloat128
     end
-    Float128(x::Number) = convert(Float128, x)
+    #Float128(x::Number) = convert(Float128, x)
 
     const Complex256 = Complex{Float128}
 
@@ -65,7 +68,7 @@ end
     reinterpret(::Type{Float128}, x::Int128) =
         reinterpret(Float128, reinterpret(UInt128, x))
     
-elseif is_windows()
+elseif Sys.iswindows()
     primitive type Float128 128 end
     const Cfloat128 = Float128
 end
@@ -78,39 +81,52 @@ significand_mask(::Type{Float128}) = 0x0000_ffff_ffff_ffff_ffff_ffff_ffff_ffff
 
 fpinttype(::Type{Float128}) = UInt128
 
-# conversion
+# constructors
 
-## Float64
-convert(::Type{Float128}, x::Float64) =
+Float128(x::Float128) = x
+
+Float128(x::Float64) =
     Float128(ccall((:__extenddftf2, quadoplib), Cfloat128, (Cdouble,), x))
-convert(::Type{Float64}, x::Float128) =
+Float64(x::Float128) =
     ccall((:__trunctfdf2, quadoplib), Cdouble, (Cfloat128,), x)
 
-convert(::Type{Int32}, x::Float128) =
+Base.Int32(x::Float128) =
     ccall((:__fixtfsi, quadoplib), Int32, (Cfloat128,), x)
-convert(::Type{Float128}, x::Int32) =
+Float128(x::Int32) =
     Float128(ccall((:__floatsitf, quadoplib), Cfloat128, (Int32,), x))
 
-convert(::Type{Float128}, x::UInt32) =
+Float128(x::UInt32) =
     Float128(ccall((:__floatunsitf, quadoplib), Cfloat128, (UInt32,), x))
 
-convert(::Type{Int64}, x::Float128) =
+Base.Int64(x::Float128) =
     ccall((:__fixtfdi, quadoplib), Int64, (Cfloat128,), x)
-convert(::Type{Float128}, x::Int64) =
+Float128(x::Int64) =
     Float128(ccall((:__floatditf, quadoplib), Cfloat128, (Int64,), x))
+
+# conversion
+
+convert(::Type{Float128}, x::Float64) = Float128(x)
+convert(::Type{Float64}, x::Float128) = Float64(x)
+convert(::Type{Int32}, x::Float128) = Int32(x)
+convert(::Type{Float128}, x::Int32) = Float128(x)
+convert(::Type{Float128}, x::UInt32) = Float128(x)
+convert(::Type{Int64}, x::Float128) = Int32(x)
+convert(::Type{Float128}, x::Int64) = Float128(x)
 
 
 const ROUNDING_MODE = Cint[0] # TODO: CHECK!!!!
 
-function convert(::Type{BigFloat}, x::Float128)
+Float128(x::BigFloat) =
+    Float128(ccall((:mpfr_get_float128, mpfr_float128), Cfloat128, (Ref{BigFloat},Int32), x, ROUNDING_MODE[end]))
+
+function BigFloat(x::Float128)
     z = BigFloat()
-    res = ccall((:mpfr_set_float128, mpfr_float128), Int32, (Ptr{BigFloat}, Cfloat128, Int32), &z, x, ROUNDING_MODE[end])
+    res = ccall((:mpfr_set_float128, mpfr_float128), Int32, (Ref{BigFloat}, Cfloat128, Int32), z, x, ROUNDING_MODE[end])
     return z
 end
-
-convert(::Type{Float128}, x::BigFloat) =
-    Float128(ccall((:mpfr_get_float128, mpfr_float128), Cfloat128, (Ptr{BigFloat},Int32), &x, ROUNDING_MODE[end]))
-
+    
+convert(::Type{BigFloat}, x::Float128) = BigFloat(x)
+convert(::Type{Float128}, x::BigFloat) = Float128(x)
 
 # comparison
 
@@ -220,7 +236,7 @@ end
 
 function string(x::Float128)
     lng = 64 
-    buf = Array{UInt8}(lng + 1)
+    buf = Array{UInt8}(undef, lng + 1) 
     lng = ccall((:quadmath_snprintf,libquadmath), Cint, (Ptr{UInt8}, Csize_t, Ptr{UInt8}, Cfloat128...), buf, lng + 1, "%.35Qe", x)
     return unsafe_string(pointer(buf), lng)
 end
