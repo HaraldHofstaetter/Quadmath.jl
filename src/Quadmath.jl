@@ -7,14 +7,14 @@ import Base: (*), +, -, /,  <, <=, ==, ^, convert,
           reinterpret, sign_mask, exponent_mask, exponent_one, exponent_half,
           significand_mask,
           promote_rule, widen,
-          string, print, show, showcompact, parse,
+          string, print, show, parse,
           acos, acosh, asin, asinh, atan, atanh, cosh, cos,
           exp, expm1, log, log2, log10, log1p, sin, sinh, sqrt,
           tan, tanh,
           ceil, floor, trunc, round, fma, 
-          atan2, copysign, max, min, hypot,
+          copysign, max, min, hypot,
           abs, imag, real, conj, angle, cis,
-          eps, realmin, realmax, isinf, isnan, isfinite
+          eps, floatmin, floatmax, isinf, isnan, isfinite
 
 import SpecialFunctions: erf, erfc, 
           besselj, besselj0, besselj1, bessely, bessely0, bessely1,
@@ -245,6 +245,5 @@ end
 
 print(io::IO, b::Float128) = print(io, string(b))
 show(io::IO, b::Float128) = print(io, string(b))
-showcompact(io::IO, b::Float128) = print(io, string(b))
 
-end # modeule Quadmath
+end # module Quadmath
