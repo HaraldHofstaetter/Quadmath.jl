@@ -1,3 +1,5 @@
+using Libdl
+
 cd(joinpath(dirname(@__FILE__), "src"))
 run(`make`)
 if (!ispath("../lib"))
